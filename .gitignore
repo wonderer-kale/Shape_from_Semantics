@@ -193,3 +193,27 @@ wandb/
 load/tets/256_tets.npz
 pretrained_models
 output*
+
+# Temporary and test directories
+tmp/
+test_on_simple_prompt/
+tmpoutputs/
+
+# Generated outputs
+*.mp4
+*.avi
+!assets/**/*.mp4
+!assets/**/*.avi
+
+# Backup files
+*.bak
+*.backup
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+tb_logs/
+csv_logs/
+lightning_logs/
