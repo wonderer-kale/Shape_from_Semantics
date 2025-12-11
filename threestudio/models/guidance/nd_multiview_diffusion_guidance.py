@@ -16,6 +16,7 @@ from threestudio.models.prompt_processors.base import PromptProcessorOutput
 from threestudio.utils.base import BaseModule
 from threestudio.utils.misc import C, cleanup, parse_version
 from threestudio.utils.typing import *
+from threestudio.utils.vag import compute_view_dependent_scale
 
 
 @threestudio.register("nd-multiview-diffusion-guidance")
@@ -385,7 +386,9 @@ class MultiviewDiffusionGuidance(BaseModule):
         # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
         #     noise_pred_text - noise_pred_uncond
         # )
-        noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
+        # noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
+        vag_scale  = compute_view_dependent_scale(elevation, azimuth).view(-1, 1, 1, 1)
+        noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
 
         if self.cfg.recon_loss:
             # reconstruct x0

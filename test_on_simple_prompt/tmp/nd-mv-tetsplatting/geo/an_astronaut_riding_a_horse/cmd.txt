@@ -1,2 +1,0 @@
-python launch.py --config configs/nd-mv-tetsplatting/geo.yaml --train --gpu 9 system.prompt_processor.prompt=an astronaut riding a horse use_timestamp=False name=nd-mv-tetsplatting/geo data.elevation_range=[5, 30] data.fovy_range=[40, 45] data.camera_distance_range=[0.8, 1.0] exp_root_dir=./test_on_simple_prompt/tmp
-Namespace(config='configs/nd-mv-tetsplatting/geo.yaml', gpu='9', train=True, validate=False, test=False, export=False, gradio=False, verbose=False, typecheck=False)
