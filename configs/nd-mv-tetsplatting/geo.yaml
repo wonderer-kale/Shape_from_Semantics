@@ -37,13 +37,13 @@ system:
   # sd guidnace
   prompt_processor_type: "stable-diffusion-prompt-processor"
   prompt_processor:
-    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
     prompt: ???
     negative_prompt: "low quality"
 
   guidance_type: "stable-diffusion-dreamtimes-guidance"
   guidance:
-    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
     min_step_percent: [0, 0.50, 0.02, 1500]  # (start_iter, start_val, end_val, end_iter)
     max_step_percent: [0, 0.98, 0.50, 1500]
     guidance_scale: 50.

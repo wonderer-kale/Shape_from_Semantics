@@ -544,7 +544,7 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
             scale = compute_view_dependent_scale(elevation, azimuth)
             
             # calculate new guidance output with new scale and new formula
-            self.guidance.cfg.guidance_scale = scale
+            self.nd_mv_guidance.cfg.guidance_scale = scale
             
             guidance_out = self.nd_mv_guidance(
                 {"comp_rgb": guidance_inp},
@@ -563,7 +563,7 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
             scale = compute_view_dependent_scale(elevation, azimuth)
             
             # calculate new guidance output with new scale and new formula
-            self.guidance.cfg.guidance_scale = scale
+            self.nd_mv_guidance.cfg.guidance_scale = scale
             
             guidance_out = self.nd_mv_guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
@@ -823,7 +823,7 @@ class ND_TeTSplatting_MV_Texture(_Base_ND_TeTSplatting_MV):
         scale = compute_view_dependent_scale(elevation, azimuth)
         
         # calculate new guidance output with new scale and new formula
-        self.guidance.cfg.guidance_scale = scale
+        self.albedo_mv_guidance.cfg.guidance_scale = scale
 
         guidance_out = self.albedo_mv_guidance(
             out,
