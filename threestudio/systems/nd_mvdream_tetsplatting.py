@@ -13,6 +13,7 @@ import threestudio
 from threestudio.systems.base import BaseLift3DSystem
 from threestudio.utils.ops import binary_cross_entropy, dot
 from threestudio.utils.typing import *
+from threestudio.utils.vag import compute_view_dependent_scale
 
 
 @dataclass
@@ -108,7 +109,15 @@ class _Base_ND_TeTSplatting(BaseLift3DSystem):
                 normal = out["comp_normal"] * 2.0 - 1.0
 
                 guidance_inp = torch.cat([normal, out["opacity"]], dim=-1)
-
+                
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+        
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -118,6 +127,15 @@ class _Base_ND_TeTSplatting(BaseLift3DSystem):
                 )
             else:
                 guidance_inp = out["comp_normal"]
+                
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+                
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -133,6 +151,15 @@ class _Base_ND_TeTSplatting(BaseLift3DSystem):
             )
         else:  # texture training
             guidance_inp = out["comp_rgb"]
+        
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+        
             guidance_out = self.guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
             )
@@ -300,6 +327,14 @@ class _Base_ND_TeTSplatting_MV(_Base_ND_TeTSplatting):
 
                 guidance_inp = torch.cat([normal, out["opacity"]], dim=-1)
 
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+                
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -309,6 +344,15 @@ class _Base_ND_TeTSplatting_MV(_Base_ND_TeTSplatting):
                 )
             else:
                 guidance_inp = out["comp_normal"]
+                
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+                
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -335,6 +379,15 @@ class _Base_ND_TeTSplatting_MV(_Base_ND_TeTSplatting):
 
         else:  # texture training
             guidance_inp = out["comp_rgb"]
+            
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
             )
@@ -364,6 +417,14 @@ class _Base_ND_TeTSplatting_MV(_Base_ND_TeTSplatting):
             disparity = out["mv_disparity"] * 2.0 - 1.0
             guidance_inp = torch.cat([normal, disparity], dim=-1)
 
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.nd_mv_guidance(
                 {"comp_rgb": guidance_inp},
                 prompt_utils,
@@ -374,6 +435,15 @@ class _Base_ND_TeTSplatting_MV(_Base_ND_TeTSplatting):
 
         else:  # texture training
             guidance_inp = out["comp_rgb"]
+            
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.nd_mv_guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
             )
@@ -468,6 +538,14 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
             scale = guidance_inp.shape[-3] // 64
             guidance_inp = F.avg_pool2d(guidance_inp.permute(0, 3, 1, 2), scale, scale).permute(0, 2, 3, 1)
             
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.nd_mv_guidance(
                 {"comp_rgb": guidance_inp},
                 prompt_utils,
@@ -478,6 +556,15 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
 
         else:  # texture training
             guidance_inp = out["comp_rgb"]
+            
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.nd_mv_guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
             )
@@ -504,7 +591,15 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
 
                 scale = guidance_inp.shape[-3] // 64
                 guidance_inp = F.avg_pool2d(guidance_inp.permute(0, 3, 1, 2), scale, scale).permute(0, 2, 3, 1)
-            
+
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+                
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -514,6 +609,15 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
                 )
             else:
                 guidance_inp = out["sd_comp_normal"]
+                
+                # added for view-dependent scale "s"
+                elevation = batch["elevation"]
+                azimuth = batch["azimuth"]
+                scale = compute_view_dependent_scale(elevation, azimuth)
+                
+                # calculate new guidance output with new scale and new formula
+                self.guidance.cfg.guidance_scale = scale
+                
                 guidance_out = self.guidance(
                     {"comp_rgb": guidance_inp},
                     prompt_utils,
@@ -523,6 +627,15 @@ class ND_TeTSplatting_MV(_Base_ND_TeTSplatting_MV):
                 )            
         else:  # texture training
             guidance_inp = out["comp_rgb"]
+            
+            # added for view-dependent scale "s"
+            elevation = batch["elevation"]
+            azimuth = batch["azimuth"]
+            scale = compute_view_dependent_scale(elevation, azimuth)
+            
+            # calculate new guidance output with new scale and new formula
+            self.guidance.cfg.guidance_scale = scale
+            
             guidance_out = self.guidance(
                 guidance_inp, prompt_utils, **batch, rgb_as_latents=False
             )
@@ -667,6 +780,15 @@ class ND_TeTSplatting_MV_Texture(_Base_ND_TeTSplatting_MV):
 
         # texture training
         guidance_inp = out["comp_rgb"]
+        
+        # added for view-dependent scale "s"
+        elevation = batch["elevation"]
+        azimuth = batch["azimuth"]
+        scale = compute_view_dependent_scale(elevation, azimuth)
+        
+        # calculate new guidance output with new scale and new formula
+        self.guidance.cfg.guidance_scale = scale
+        
         guidance_out = self.guidance(
             {"comp_rgb": guidance_inp},
             prompt_utils,
@@ -694,6 +816,14 @@ class ND_TeTSplatting_MV_Texture(_Base_ND_TeTSplatting_MV):
 
         loss = 0.0
         prompt_utils = self.albedo_mv_prompt_processor()
+
+        # added for view-dependent scale "s"
+        elevation = batch["elevation"]
+        azimuth = batch["azimuth"]
+        scale = compute_view_dependent_scale(elevation, azimuth)
+        
+        # calculate new guidance output with new scale and new formula
+        self.guidance.cfg.guidance_scale = scale
 
         guidance_out = self.albedo_mv_guidance(
             out,

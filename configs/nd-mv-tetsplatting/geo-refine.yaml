@@ -39,13 +39,13 @@ system:
   # sd guidnace
   prompt_processor_type: "stable-diffusion-prompt-processor"
   prompt_processor:
-    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
     prompt: ???
     negative_prompt: "low quality"
 
   guidance_type: "stable-diffusion-dreamtimes-guidance"
   guidance:
-    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
     min_step_percent: 0.02  # (start_iter, start_val, end_val, end_iter)
     max_step_percent: 0.50
     guidance_scale: 50.
@@ -54,7 +54,7 @@ system:
   # mv guidance
   nd_prompt_processor_type: "stable-diffusion-prompt-processor"
   nd_prompt_processor:
-    pretrained_model_name_or_path: "runwayml/stable-diffusion-v1-5" # our model training
+    pretrained_model_name_or_path: "stable-diffusion-v1-5/stable-diffusion-v1-5" # our model training
     prompt: ${system.prompt_processor.prompt}
     negative_prompt: "low quality"
     front_threshold: 30.

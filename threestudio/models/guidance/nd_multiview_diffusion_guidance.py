@@ -382,9 +382,10 @@ class MultiviewDiffusionGuidance(BaseModule):
         noise_pred_text, noise_pred_uncond = noise_pred.chunk(
             2
         )  # Note: flipped compared to stable-dreamfusion
-        noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
-            noise_pred_text - noise_pred_uncond
-        )
+        # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
+        #     noise_pred_text - noise_pred_uncond
+        # )
+        noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
 
         if self.cfg.recon_loss:
             # reconstruct x0

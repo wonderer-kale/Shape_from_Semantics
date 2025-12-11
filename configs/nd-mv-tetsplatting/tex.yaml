@@ -1,4 +1,4 @@
-name: ???
+name: "./test_on_simple_prompt/tmp/nd-mv-tetsplatting/geo-refine/an_astronaut_riding_a_horse/ckpts/last.ckpt"
 tag: "${rmspace:${system.prompt_processor.prompt},_}"
 exp_root_dir: "outputs"
 seed: 0
@@ -50,13 +50,13 @@ system:
   # sd guidnace
   prompt_processor_type: "stable-diffusion-prompt-processor"
   prompt_processor:
-    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
     prompt: ???
     negative_prompt: "shadow, oversaturated, low quality, unrealistic"
 
   guidance_type: "stable-diffusion-dreamtimes-guidance"
   guidance:
-    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
     min_step_percent: 0.02  # (start_iter, start_val, end_val, end_iter)
     max_step_percent: 0.98
     guidance_scale: 50.
@@ -65,7 +65,7 @@ system:
   # mv guidance
   albedo_prompt_processor_type: "stable-diffusion-prompt-processor"
   albedo_prompt_processor:
-    pretrained_model_name_or_path: "stabilityai/stable-diffusion-2-1-base"
+    pretrained_model_name_or_path: "Manojb/stable-diffusion-2-1-base"
     prompt: the albedo of ${system.prompt_processor.prompt}
     negative_prompt: "shadow"
     front_threshold: 30.

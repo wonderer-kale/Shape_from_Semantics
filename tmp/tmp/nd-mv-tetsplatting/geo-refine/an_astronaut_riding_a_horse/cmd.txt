@@ -1,0 +1,2 @@
+python launch.py --config configs/nd-mv-tetsplatting/geo-refine.yaml --train --gpu 5 system.prompt_processor.prompt=an astronaut riding a horse use_timestamp=False name=nd-mv-tetsplatting/geo-refine system.geometry_convert_from=./tmp/tmp/nd-mv-tetsplatting/geo/an_astronaut_riding_a_horse/ckpts/last.ckpt exp_root_dir=./tmp/tmp
+Namespace(config='configs/nd-mv-tetsplatting/geo-refine.yaml', gpu='5', train=True, validate=False, test=False, export=False, gradio=False, verbose=False, typecheck=False)

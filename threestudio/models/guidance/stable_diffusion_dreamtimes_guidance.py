@@ -251,9 +251,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
                     -1, 1, 1, 1
                 ) * perpendicular_component(e_i_neg, e_pos)
 
-            noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
-                e_pos + accum_grad
-            )
+            # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
+            #     e_pos + accum_grad
+            # )
+            noise_pred = self.cfg.guidance_scale * (noise_pred_text + accum_grad) + (1 - self.cfg.guidance_scale) * noise_pred_uncond
         else:
             neg_guidance_weights = None
             text_embeddings = prompt_utils.get_text_embeddings(
@@ -275,9 +276,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
             # perform guidance (high scale from paper!)
             noise_pred_text, noise_pred_uncond = noise_pred.chunk(2)
             # uncond
-            noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
-                noise_pred_text - noise_pred_uncond
-            )
+            # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
+            #     noise_pred_text - noise_pred_uncond
+            # )
+            noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
 
         if self.cfg.weighting_strategy == "sds":
             # w(t), sigma_t^2
@@ -351,9 +353,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
                     -1, 1, 1, 1
                 ) * perpendicular_component(e_i_neg, e_pos)
 
-            noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
-                e_pos + accum_grad
-            )
+            # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
+            #     e_pos + accum_grad
+            # )
+            noise_pred = self.cfg.guidance_scale * (noise_pred_text + accum_grad) + (1 - self.cfg.guidance_scale) * noise_pred_uncond
         else:
             neg_guidance_weights = None
             text_embeddings = prompt_utils.get_text_embeddings(
@@ -378,9 +381,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
 
                 # perform guidance (high scale from paper!)
                 noise_pred_text, noise_pred_uncond = noise_pred.chunk(2)
-                noise_pred = noise_pred_text + self.cfg.guidance_scale * (
-                    noise_pred_text - noise_pred_uncond
-                )
+                # noise_pred = noise_pred_text + self.cfg.guidance_scale * (
+                #     noise_pred_text - noise_pred_uncond
+                # )
+                noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
 
         Ds = zs - sigma * noise_pred
 
@@ -556,9 +560,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
                     -1, 1, 1, 1
                 ) * perpendicular_component(e_i_neg, e_pos)
 
-            noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
-                e_pos + accum_grad
-            )
+            # noise_pred = noise_pred_uncond + self.cfg.guidance_scale * (
+            #     e_pos + accum_grad
+            # )
+            noise_pred = self.cfg.guidance_scale * (noise_pred_text + accum_grad) + (1 - self.cfg.guidance_scale) * noise_pred_uncond
         else:
             # pred noise
             latent_model_input = torch.cat([latents_noisy] * 2, dim=0)
@@ -569,9 +574,10 @@ class StableDiffusionDreamtimesGuidance(BaseObject):
             )
             # perform guidance (high scale from paper!)
             noise_pred_text, noise_pred_uncond = noise_pred.chunk(2)
-            noise_pred = noise_pred_text + self.cfg.guidance_scale * (
-                noise_pred_text - noise_pred_uncond
-            )
+            # noise_pred = noise_pred_text + self.cfg.guidance_scale * (
+            #     noise_pred_text - noise_pred_uncond
+            # )
+            noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
 
         return noise_pred
 

@@ -1,6 +1,6 @@
 export TRANSFORMERS_OFFLINE=1
 export DIFFUSERS_OFFLINE=1
-export HF_HUB_OFFLINE=1
+export HF_HUB_OFFLINE=0
 export HF_HOME=./pretrained_models/huggingface
 
 process_string() {
