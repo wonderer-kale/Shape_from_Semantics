@@ -17,7 +17,7 @@ side_prompt=$3
 back_prompt=$4
 overhead_prompt=$5
 SAVE_PATH=$6
-EXTRA_ARGS=${@:7}
+#EXTRA_ARGS=${@:7}
 
 exp_root_dir=$SAVE_PATH/tmp
 SAVE_MODEL_PATH=$SAVE_PATH/result
