@@ -1,3 +1,4 @@
+set -e
 export TRANSFORMERS_OFFLINE=0
 export DIFFUSERS_OFFLINE=0
 export HF_HUB_OFFLINE=0
