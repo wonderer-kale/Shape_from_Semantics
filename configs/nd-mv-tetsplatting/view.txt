@@ -1,0 +1,2 @@
+azimuth elavation prompt
+10 20 tex_out
