@@ -27,6 +27,10 @@ def compute_view_dependent_scale(elevation, azimuth, view_anchors):
         weights = []
         weights_sum = 0
         for view_anchor in view_anchors:
+<<<<<<< HEAD
+=======
+            print("view_anchor", view_anchor)
+>>>>>>> 714e0a8 (prompt processor update)
             w = 1 / (1 - angle_dot(e, a, torch.tensor(view_anchor[0], device=device), torch.tensor(view_anchor[1], device=device))) 
             weights.append(w)
             weights_sum += w
