@@ -16,7 +16,7 @@ GPUS=$1
 VIEWS_JSON=$2 # multiviews and multiprompts
 SAVE_PATH=$3
 
-prompt="$(date +"%Y%m%d_%H%M%S")"
+prompt="sfs"
 
 exp_root_dir=$SAVE_PATH/tmp
 SAVE_MODEL_PATH=$SAVE_PATH/result

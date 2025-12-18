@@ -15,6 +15,8 @@ from threestudio.utils.ops import (shifted_cosine_decay,
                                    shifted_expotional_decay,)
 from threestudio.utils.typing import *
 
+from threestudio.utils.vag import angles_to_vector
+
 
 def hash_prompt(model: str, prompt: str) -> str:
     import hashlib
@@ -72,7 +74,9 @@ class PromptProcessorOutput:
                 ],
                 dim=-1,
             )  # (B,3)
-            score = v @ self.view_anchors.T  # (B,Nv)
+            anchors = [angles_to_vector(i, j) for (i, j) in zip(self.view_anchors[:, 0], self.view_anchors[:, 1])]
+            anchors = torch.stack(anchors).to(elevation.device)
+            score = v @ anchors.T  # (B,Nv)
             direction_idx = torch.argmax(score, dim=-1)  # (B,)
         else:
             # Get direction
@@ -359,7 +363,8 @@ class PromptProcessor(BaseObject):
 
             self.view_anchors = torch.stack(
                 [
-                    _sph2vec_deg(v["elevation"], v["azimuth"], self.device)
+                    # _sph2vec_deg(v["elevation"], v["azimuth"], self.device)
+                    torch.tensor([v["elevation"], v["azimuth"]]).to(self.device)
                     for v in self.views
                 ],
                 dim=0,
