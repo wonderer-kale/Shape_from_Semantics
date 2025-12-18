@@ -47,6 +47,8 @@ class PromptProcessorOutput:
     perp_neg_f_fsb: Tuple[float, float, float]
     perp_neg_f_fs: Tuple[float, float, float]
     perp_neg_f_sf: Tuple[float, float, float]
+    view_anchors: Optional[Float[Tensor, "Nv 3"]] = None # dennis update
+
 
     def get_text_embeddings(
         self,
@@ -57,7 +59,22 @@ class PromptProcessorOutput:
     ) -> Float[Tensor, "BB N Nf"]:
         batch_size = elevation.shape[0]
 
-        if view_dependent_prompting:
+        # dennis update
+        # if view_dependent_prompting:
+        if self.view_anchors is not None:
+            elev = torch.deg2rad(elevation)
+            azi = torch.deg2rad(azimuth)
+            v = torch.stack(
+                [
+                    torch.cos(elev) * torch.cos(azi),
+                    torch.cos(elev) * torch.sin(azi),
+                    torch.sin(elev),
+                ],
+                dim=-1,
+            )  # (B,3)
+            score = v @ self.view_anchors.T  # (B,Nv)
+            direction_idx = torch.argmax(score, dim=-1)  # (B,)
+        else:
             # Get direction
             direction_idx = torch.zeros_like(elevation, dtype=torch.long)
             for d in self.directions:
@@ -65,56 +82,14 @@ class PromptProcessorOutput:
                     d.condition(elevation, azimuth, camera_distances)
                 ] = self.direction2idx[d.name]
 
-            # Get text embeddings
-            text_embeddings = self.text_embeddings_vd[direction_idx]  # type: ignore
-            uncond_text_embeddings = self.uncond_text_embeddings_vd[direction_idx]  # type: ignore
-        else:
-            text_embeddings = self.text_embeddings.expand(batch_size, -1, -1)  # type: ignore
-            uncond_text_embeddings = self.uncond_text_embeddings.expand(  # type: ignore
-                batch_size, -1, -1
-            )
-
-        # edit by kw
-        # print(f"elevation: {elevation}, azimuth: {azimuth}, camera_distances: {camera_distances}")
-        # import math
-        # def angles_to_vector(elevation, azimuth):
-        #     # degrees → radians
-        #     ele = elevation * math.pi / 180.0
-        #     azi = azimuth * math.pi / 180.0
-
-        #     x = torch.cos(ele) * torch.cos(azi)
-        #     y = torch.cos(ele) * torch.sin(azi)
-        #     z = torch.sin(ele)
-        #     return torch.stack([x, y, z])
-
-        # def angle_dot(e1, a1, e2, a2):
-        #     print(f"e1: {e1}, a1: {a1}, e2: {e2}, a2: {a2}")
-        #     v1 = angles_to_vector(e1, a1)
-        #     v2 = angles_to_vector(e2, a2)
-        #     print(f"the shape of v: {v1.shape}, v2: {v2.shape}")
-        #     return torch.dot(v1, v2)
-        
-        # s_list = []
-        # for e, a in zip(elevation, azimuth):
-        #     device = elevation.device
-            # w0 = 1 / (1 - angle_dot(e, a, torch.tensor(0.0, device=device), torch.tensor(0.0, device=device))) # front
-        #     w1 = 1 / (1 - angle_dot(e, a, torch.tensor(0.0, device=device), torch.tensor(180.0, device=device)))  # back
-        #     w2 = 1 / (1 - angle_dot(e, a, torch.tensor(0.0, device=device), torch.tensor(90.0, device=device)))  # side
-        #     w3 = 1 / (1 - angle_dot(e, a, torch.tensor(90.0, device=device), torch.tensor(0.0, device=device)))  # overhead
-
-        #     w_sum = w0 + w1 + w2 + w3
-        #     s0 = 1.0
-        #     W = torch.stack([w0, w1, w2, w3], dim=0)  # shape (4, ...)
-
-        #     top2 = torch.topk(W, k=2, dim=0).values
-        #     largest_w = top2[0]                
-        #     second_largest_w = top2[1]
-
-        #     s = s0 * (largest_w - second_largest_w) / (w_sum)
-        #     print(f"s: {s}")
-        #     s_list.append(s)
-        # s = torch.stack(s_list, dim=0)  # shape (B, )
-        # print(f"s shape: {s.shape}")
+        # Get text embeddings
+        text_embeddings = self.text_embeddings_vd[direction_idx]  # type: ignore
+        uncond_text_embeddings = self.uncond_text_embeddings_vd[direction_idx]  # type: ignore
+        # else:
+        #     text_embeddings = self.text_embeddings.expand(batch_size, -1, -1)  # type: ignore
+        #     uncond_text_embeddings = self.uncond_text_embeddings.expand(  # type: ignore
+        #         batch_size, -1, -1
+        #     )
 
         # IMPORTANT: we return (cond, uncond), which is in different order than other implementations!
         return torch.cat([text_embeddings, uncond_text_embeddings], dim=0)
@@ -128,7 +103,7 @@ class PromptProcessorOutput:
     ) -> Tuple[Float[Tensor, "BBBB N Nf"], Float[Tensor, "B 2"]]:
         assert (
             view_dependent_prompting
-        ), "Perp-Neg only works with view-dependent prompting"
+        ), "Perp-Neg onldy works with view-dependent prompting"
 
         batch_size = elevation.shape[0]
 
@@ -250,6 +225,9 @@ class PromptProcessor(BaseObject):
         pretrained_model_name_or_path_prompt_debiasing: str = "bert-base-uncased"
         # index of words that can potentially be removed
         prompt_debiasing_mask_ids: Optional[List[int]] = None
+        
+        # dennis update
+        views: Optional[Any] = None
 
     cfg: Config
 
@@ -349,30 +327,75 @@ class PromptProcessor(BaseObject):
             f"Using prompt [{self.prompt}] and negative prompt [{self.negative_prompt}]"
         )
 
-        # view-dependent prompting
-        if self.cfg.use_prompt_debiasing:
-            assert (
-                self.cfg.prompt_side is None
-                and self.cfg.prompt_back is None
-                and self.cfg.prompt_overhead is None
-            ), "Do not manually assign prompt_side, prompt_back or prompt_overhead when using prompt debiasing"
-            prompts = self.get_debiased_prompt(self.prompt)
+        # dennis update
+        def _render_view_prompt(view_prompt: str, base: str) -> str:
+            return view_prompt.replace("{base}", base)
+
+        if self.cfg.views is not None:
+            # -------- custom views mode --------
+            self.views = list(self.cfg.views)  # ListConfig -> list
+
+            # build per-view prompts
             self.prompts_vd = [
-                d.prompt(prompt) for d, prompt in zip(self.directions, prompts)
+                #_render_view_prompt(v.get("prompt", "{base}"), self.prompt)
+                v.get("prompt") for v in self.views
             ]
-        else:
-            self.prompts_vd = [
-                self.cfg.get(f"prompt_{d.name}", None) or d.prompt(self.prompt)  # type: ignore
-                for d in self.directions
+            self.negative_prompts_vd = [
+                v.get("negative_prompt", self.negative_prompt) for v in self.views
             ]
 
-        prompts_vd_display = " ".join(
-            [
-                f"[{d.name}]:[{prompt}]"
-                for prompt, d in zip(self.prompts_vd, self.directions)
-            ]
-        )
-        threestudio.info(f"Using view-dependent prompts {prompts_vd_display}")
+            # build anchors (Nv, 3)
+            def _sph2vec_deg(elev_deg: float, azim_deg: float, device):
+                elev = torch.deg2rad(torch.tensor(float(elev_deg), device=device))
+                azim = torch.deg2rad(torch.tensor(float(azim_deg), device=device))
+                return torch.stack(
+                    [
+                        torch.cos(elev) * torch.cos(azim),
+                        torch.cos(elev) * torch.sin(azim),
+                        torch.sin(elev),
+                    ],
+                    dim=0,
+                )
+
+            self.view_anchors = torch.stack(
+                [
+                    _sph2vec_deg(v["elevation"], v["azimuth"], self.device)
+                    for v in self.views
+                ],
+                dim=0,
+            )
+
+            # for display
+            prompts_vd_display = " ".join(
+                [f'[{v.get("name", str(i))}]:[{p}]' for i, (v, p) in enumerate(zip(self.views, self.prompts_vd))]
+            )
+            threestudio.info(f"Using custom views prompts {prompts_vd_display}")
+
+        else:
+            # view-dependent prompting
+            if self.cfg.use_prompt_debiasing:
+                assert (
+                    self.cfg.prompt_side is None
+                    and self.cfg.prompt_back is None
+                    and self.cfg.prompt_overhead is None
+                ), "Do not manually assign prompt_side, prompt_back or prompt_overhead when using prompt debiasing"
+                prompts = self.get_debiased_prompt(self.prompt)
+                self.prompts_vd = [
+                    d.prompt(prompt) for d, prompt in zip(self.directions, prompts)
+                ]
+            else:
+                self.prompts_vd = [
+                    self.cfg.get(f"prompt_{d.name}", None) or d.prompt(self.prompt)  # type: ignore
+                    for d in self.directions
+                ]
+
+            prompts_vd_display = " ".join(
+                [
+                    f"[{d.name}]:[{prompt}]"
+                    for prompt, d in zip(self.prompts_vd, self.directions)
+                ]
+            )
+            threestudio.info(f"Using view-dependent prompts {prompts_vd_display}")
 
         self.negative_prompts_vd = [
             d.negative_prompt(self.negative_prompt) for d in self.directions
@@ -559,4 +582,5 @@ class PromptProcessor(BaseObject):
             perp_neg_f_fsb=self.cfg.perp_neg_f_fsb,
             perp_neg_f_fs=self.cfg.perp_neg_f_fs,
             perp_neg_f_sf=self.cfg.perp_neg_f_sf,
+            view_anchors=getattr(self, "view_anchors", None), # dennis update
         )

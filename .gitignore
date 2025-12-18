@@ -217,3 +217,5 @@ Thumbs.db
 tb_logs/
 csv_logs/
 lightning_logs/
+
+# no config at this time
