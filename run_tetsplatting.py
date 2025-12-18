@@ -9,7 +9,7 @@ def get_args():
     parser.add_argument("--views", type=str, default='[{"prompt":"a running dog","elevation":0,"azimuth":0},\
           {"prompt":"a bird","elevation":0,"azimuth":90}]')
     
-    parser.add_argument("--run_type", "-r", type=str, default="run_single_new")
+    parser.add_argument("--run_type", "-r", type=str, default="run_single_test")
     parser.add_argument("--gpus", type=int, default=0)
     parser.add_argument("--output_dir", "-o", type=str, required=True)
     parser.add_argument("--iters", "-i", type=int, default=None)
