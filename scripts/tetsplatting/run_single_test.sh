@@ -72,9 +72,6 @@ python3 launch.py --config configs/nd-mv-tetsplatting/geo-refine.yaml \
 # step.3
 ITER=2000
 prompt=$(process_string "${prompt}") # trick proposed By Fantasia3D
-side_prompt=$(process_string "${side_prompt}")
-back_prompt=$(process_string "${back_prompt}")
-overhead_prompt=$(process_string "${overhead_prompt}")
 
 python3 launch.py --config configs/nd-mv-tetsplatting/tex.yaml \
     name="$tex_out" \
