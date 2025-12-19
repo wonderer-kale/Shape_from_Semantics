@@ -1,3 +1,4 @@
+set -e
 export TRANSFORMERS_OFFLINE=0
 export DIFFUSERS_OFFLINE=0
 export HF_HUB_OFFLINE=0
@@ -12,12 +13,10 @@ process_string() {
 }
 
 GPUS=$1
-prompt=$2           # front view 的文字，當成 base prompt
-side_prompt=$3
-back_prompt=$4
-overhead_prompt=$5
-SAVE_PATH=$6
-EXTRA_ARGS=${@:7}
+VIEWS_JSON=$2 # multiviews and multiprompts
+SAVE_PATH=$3
+
+prompt=sfs
 
 exp_root_dir=$SAVE_PATH/tmp
 SAVE_MODEL_PATH=$SAVE_PATH/result
@@ -25,38 +24,34 @@ mkdir -p  $exp_root_dir
 mkdir -p  $SAVE_MODEL_PATH
 
 
-echo "front prompt: $prompt"
-echo "side  prompt: $side_prompt"
-echo "back  prompt: $back_prompt"
-echo "over  prompt: $overhead_prompt"
+echo "views: $VIEWS_JSON"
+echo "output_dir: $SAVE_PATH"
+echo "GPUs: $GPUS"
+
+
+config_file=random-view
+# config_file=nd-mv-tetsplatting
+
+geo_out=${config_file}/geo
+geo_refine_out=${config_file}/geo-refine
+tex_out=${config_file}/tex-fast
+
 result=$(echo "${prompt}" | tr ' ' '_')
 result=$(echo "$result" | tr -d '"')
-echo output_dir: $SAVE_PATH
-echo GPUs: $GPUS
-
-geo_out=nd-mv-tetsplatting/geo
-geo_refine_out=nd-mv-tetsplatting/geo-refine
-tex_out=nd-mv-tetsplatting/tex-fast
-
 
 rm -rf $exp_root_dir/$geo_out/$result
 rm -rf $exp_root_dir/$geo_refine_out/$result
 rm -rf $exp_root_dir/$tex_out/a_DSLR_photo_of_$result
 echo $exp_root_dir/$tex_out/$result
 
+
 # # step.1
-python3 launch.py --config configs/nd-mv-tetsplatting/geo.yaml \
+python3 launch.py --config configs/${config_file}/geo.yaml \
     --train --gpu "$GPUS" \
     system.prompt_processor.prompt="$prompt" \
-    system.prompt_processor.prompt_front="$prompt" \
-    system.prompt_processor.prompt_side="$side_prompt" \
-    system.prompt_processor.prompt_back="$back_prompt" \
-    system.prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.prompt_processor.views="$VIEWS_JSON" \
     system.nd_prompt_processor.prompt="$prompt" \
-    system.nd_prompt_processor.prompt_front="$prompt" \
-    system.nd_prompt_processor.prompt_side="$side_prompt" \
-    system.nd_prompt_processor.prompt_back="$back_prompt" \
-    system.nd_prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.nd_prompt_processor.views="$VIEWS_JSON" \
     use_timestamp=False \
     name="$geo_out" \
     data.elevation_range="[5, 30]" \
@@ -66,18 +61,12 @@ python3 launch.py --config configs/nd-mv-tetsplatting/geo.yaml \
     $EXTRA_ARGS
 
 # step.2
-python3 launch.py --config configs/nd-mv-tetsplatting/geo-refine.yaml \
+python3 launch.py --config configs/${config_file}/geo-refine.yaml \
     --train --gpu "$GPUS" \
     system.prompt_processor.prompt="$prompt" \
-    system.prompt_processor.prompt_front="$prompt" \
-    system.prompt_processor.prompt_side="$side_prompt" \
-    system.prompt_processor.prompt_back="$back_prompt" \
-    system.prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.prompt_processor.views="$VIEWS_JSON" \
     system.nd_prompt_processor.prompt="$prompt" \
-    system.nd_prompt_processor.prompt_front="$prompt" \
-    system.nd_prompt_processor.prompt_side="$side_prompt" \
-    system.nd_prompt_processor.prompt_back="$back_prompt" \
-    system.nd_prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.nd_prompt_processor.views="$VIEWS_JSON" \
     use_timestamp=False \
     name="$geo_refine_out" \
     system.geometry_convert_from="$exp_root_dir/$geo_out/$result/ckpts/last.ckpt" \
@@ -91,18 +80,12 @@ side_prompt=$(process_string "${side_prompt}")
 back_prompt=$(process_string "${back_prompt}")
 overhead_prompt=$(process_string "${overhead_prompt}")
 
-python3 launch.py --config configs/nd-mv-tetsplatting/tex.yaml \
+python3 launch.py --config configs/${config_file}/tex.yaml \
     name="$tex_out" \
     system.prompt_processor.prompt="$prompt" \
-    system.prompt_processor.prompt_front="$prompt" \
-    system.prompt_processor.prompt_side="$side_prompt" \
-    system.prompt_processor.prompt_back="$back_prompt" \
-    system.prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.prompt_processor.views="$VIEWS_JSON" \
     system.albedo_prompt_processor.prompt="$prompt" \
-    system.albedo_prompt_processor.prompt_front="$prompt" \
-    system.albedo_prompt_processor.prompt_side="$side_prompt" \
-    system.albedo_prompt_processor.prompt_back="$back_prompt" \
-    system.albedo_prompt_processor.prompt_overhead="$overhead_prompt" \
+    system.albedo_prompt_processor.views="$VIEWS_JSON" \
     system.geometry_convert_from="$exp_root_dir/$geo_refine_out/$result/ckpts/last.ckpt" \
     --train --gpu "$GPUS" \
     use_timestamp=False \
@@ -112,8 +95,6 @@ python3 launch.py --config configs/nd-mv-tetsplatting/tex.yaml \
 
 
 # extract mesh
-result=$(echo "${prompt}" | tr ' ' '_')
-result=$(echo "$result" | tr -d '"')
 python launch.py --config $exp_root_dir/$tex_out/$result/configs/parsed.yaml --export --gpu $GPUS \
     resume=$exp_root_dir/$tex_out/$result/ckpts/last.ckpt system.exporter_type=mesh-exporter \
     system.exporter.context_type=cuda exp_root_dir=$exp_root_dir ${@:4}

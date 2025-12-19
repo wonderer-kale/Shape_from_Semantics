@@ -6,10 +6,8 @@ import time
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--front_text", type=str, default="an astronaut riding a horse")
-    parser.add_argument("--side_text", type=str, default="an astronaut riding a horse")
-    parser.add_argument("--back_text", type=str, default="an astronaut riding a horse")
-    parser.add_argument("--overhead_text", type=str, default="an astronaut riding a horse")
+    parser.add_argument("--views", type=str, default='[{"prompt":"a running dog","elevation":0,"azimuth":0},\
+          {"prompt":"a bird","elevation":0,"azimuth":90}]')
     
     parser.add_argument("--run_type", "-r", type=str, default="run_single_test")
     parser.add_argument("--gpus", type=int, default=0)
@@ -22,10 +20,12 @@ def get_args():
 
 def main(args, extras):
     start_time = time.time()
+    
+    views = args.views
     if args.iters is not None:
-        cmd = f'bash scripts/tetsplatting/{args.run_type}.sh {args.gpus} "{args.front_text}" "{args.side_text}" "{args.back_text}" "{args.overhead_text}" {args.output_dir} trainer.max_steps={args.iters}'
+        cmd = f'bash scripts/tetsplatting/{args.run_type}.sh {args.gpus} \'{views}\' {args.output_dir} trainer.max_steps={args.iters}'
     else:
-        cmd = f'bash scripts/tetsplatting/{args.run_type}.sh {args.gpus} "{args.front_text}" "{args.side_text}" "{args.back_text}" "{args.overhead_text}" {args.output_dir} '
+        cmd = f'bash scripts/tetsplatting/{args.run_type}.sh {args.gpus} \'{views}\' {args.output_dir} '
     print(f"cmd:{cmd}")
     os.system(cmd)
     print(f"time cost:{time.time() - start_time}")

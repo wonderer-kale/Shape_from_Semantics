@@ -233,7 +233,8 @@ class StableDiffusionGuidance(BaseObject):
             # )
             # without negative prompt
             # noise_pred = self.cfg.guidance_scale * (noise_pred_text + accum_grad) + (1 - self.cfg.guidance_scale) * noise_pred_uncond
-            vag_scale  = compute_view_dependent_scale(elevation, azimuth).view(-1, 1, 1, 1)
+            view_anchors = prompt_utils.view_anchors
+            vag_scale    = compute_view_dependent_scale(elevation, azimuth, view_anchors).view(-1, 1, 1, 1)
             noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
         else:
             neg_guidance_weights = None
@@ -259,7 +260,8 @@ class StableDiffusionGuidance(BaseObject):
                 # noise_pred_text - noise_pred_uncond
             # )
             # noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
-            vag_scale  = compute_view_dependent_scale(elevation, azimuth).view(-1, 1, 1, 1)
+            view_anchors = prompt_utils.view_anchors
+            vag_scale    = compute_view_dependent_scale(elevation, azimuth, view_anchors).view(-1, 1, 1, 1)
             noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
         if self.cfg.weighting_strategy == "sds":
             # w(t), sigma_t^2, alphas t:[0, 1000] -> [1, 0]
@@ -346,7 +348,8 @@ class StableDiffusionGuidance(BaseObject):
                 # e_pos + accum_grad
             # )
             # noise_pred = self.cfg.guidance_scale * (noise_pred_text + accum_grad) + (1 - self.cfg.guidance_scale) * noise_pred_uncond
-            vag_scale  = compute_view_dependent_scale(elevation, azimuth).view(-1, 1, 1, 1)
+            view_anchors = prompt_utils.view_anchors
+            vag_scale    = compute_view_dependent_scale(elevation, azimuth, view_anchors).view(-1, 1, 1, 1)
             noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
         else:
             neg_guidance_weights = None
@@ -376,7 +379,8 @@ class StableDiffusionGuidance(BaseObject):
                     # noise_pred_text - noise_pred_uncond
                 # )
                 # noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
-                vag_scale  = compute_view_dependent_scale(elevation, azimuth).view(-1, 1, 1, 1)
+                view_anchors = prompt_utils.view_anchors
+                vag_scale    = compute_view_dependent_scale(elevation, azimuth, view_anchors).view(-1, 1, 1, 1)
                 noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
         Ds = zs - sigma * noise_pred
 
