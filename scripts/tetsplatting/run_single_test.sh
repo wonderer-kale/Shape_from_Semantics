@@ -16,7 +16,7 @@ GPUS=$1
 VIEWS_JSON=$2 # multiviews and multiprompts
 SAVE_PATH=$3
 
-prompt="sfs"
+prompt=sfs
 
 exp_root_dir=$SAVE_PATH/tmp
 SAVE_MODEL_PATH=$SAVE_PATH/result
@@ -29,9 +29,12 @@ echo "output_dir: $SAVE_PATH"
 echo "GPUs: $GPUS"
 
 
-geo_out=nd-mv-tetsplatting/geo
-geo_refine_out=nd-mv-tetsplatting/geo-refine
-tex_out=nd-mv-tetsplatting/tex-fast
+config_file=random-view
+# config_file=nd-mv-tetsplatting
+
+geo_out=${config_file}/geo
+geo_refine_out=${config_file}/geo-refine
+tex_out=${config_file}/tex-fast
 
 result=$(echo "${prompt}" | tr ' ' '_')
 result=$(echo "$result" | tr -d '"')
@@ -41,8 +44,9 @@ rm -rf $exp_root_dir/$geo_refine_out/$result
 rm -rf $exp_root_dir/$tex_out/a_DSLR_photo_of_$result
 echo $exp_root_dir/$tex_out/$result
 
+
 # # step.1
-python3 launch.py --config configs/nd-mv-tetsplatting/geo.yaml \
+python3 launch.py --config configs/${config_file}/geo.yaml \
     --train --gpu "$GPUS" \
     system.prompt_processor.prompt="$prompt" \
     system.prompt_processor.views="$VIEWS_JSON" \
@@ -57,7 +61,7 @@ python3 launch.py --config configs/nd-mv-tetsplatting/geo.yaml \
     $EXTRA_ARGS
 
 # step.2
-python3 launch.py --config configs/nd-mv-tetsplatting/geo-refine.yaml \
+python3 launch.py --config configs/${config_file}/geo-refine.yaml \
     --train --gpu "$GPUS" \
     system.prompt_processor.prompt="$prompt" \
     system.prompt_processor.views="$VIEWS_JSON" \
@@ -76,7 +80,7 @@ side_prompt=$(process_string "${side_prompt}")
 back_prompt=$(process_string "${back_prompt}")
 overhead_prompt=$(process_string "${overhead_prompt}")
 
-python3 launch.py --config configs/nd-mv-tetsplatting/tex.yaml \
+python3 launch.py --config configs/${config_file}/tex.yaml \
     name="$tex_out" \
     system.prompt_processor.prompt="$prompt" \
     system.prompt_processor.views="$VIEWS_JSON" \
