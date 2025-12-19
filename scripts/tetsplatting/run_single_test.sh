@@ -71,7 +71,8 @@ python3 launch.py --config configs/nd-mv-tetsplatting/geo-refine.yaml \
 
 # step.3
 ITER=2000
-prompt=$(process_string "${prompt}") # trick proposed By Fantasia3D
+VIEWS_JSON=$(echo "$VIEWS_JSON" | jq 'map(.prompt = "a DSLR photo of \(.prompt)")') #properly transform every prompt
+echo "VIEWS_JSON: $VIEWS_JSON"
 
 python3 launch.py --config configs/nd-mv-tetsplatting/tex.yaml \
     name="$tex_out" \
