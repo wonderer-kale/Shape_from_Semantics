@@ -58,6 +58,7 @@ python3 launch.py --config configs/${config_file}/geo.yaml \
     data.fovy_range="[40, 45]" \
     data.camera_distance_range="[0.8, 1.0]" \
     exp_root_dir="$exp_root_dir" \
+    data.views="$VIEWS_JSON" \
     $EXTRA_ARGS
 
 # step.2
@@ -71,6 +72,7 @@ python3 launch.py --config configs/${config_file}/geo-refine.yaml \
     name="$geo_refine_out" \
     system.geometry_convert_from="$exp_root_dir/$geo_out/$result/ckpts/last.ckpt" \
     exp_root_dir="$exp_root_dir" \
+    data.views="$VIEWS_JSON" \
     $EXTRA_ARGS
 
 # step.3
@@ -91,6 +93,7 @@ python3 launch.py --config configs/${config_file}/tex.yaml \
     use_timestamp=False \
     exp_root_dir="$exp_root_dir" \
     trainer.max_steps=$ITER \
+    data.views="$VIEWS_JSON" \
     $EXTRA_ARGS
 
 

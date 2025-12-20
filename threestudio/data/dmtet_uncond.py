@@ -61,6 +61,11 @@ class RandomCameraDataModuleConfig:
     multiview_eval: bool = False
     cond_view: List[int] = field(default_factory=lambda: [])
     relative: bool = True  # using at orthogonal dataset
+    
+    # for sfs
+    views: List[Dict[str, Any]] = field(default_factory=lambda: [] )
+    azimuth_jitter: float = 50.0
+    elevation_jitter: float = 25.0
 
 
 class RandomCameraIterableDataset(IterableDataset, Updateable):

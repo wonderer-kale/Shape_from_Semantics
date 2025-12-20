@@ -20,7 +20,7 @@ def angle_dot(e1, a1, e2, a2):
     print(f"the shape of v: {v1.shape}, v2: {v2.shape}")
     return torch.dot(v1, v2)
 
-def compute_view_dependent_scale(elevation, azimuth, view_anchors):
+def compute_view_dependent_scale(elevation, azimuth, view_anchors, s0=70.0):
     s_list = []
     for e, a in zip(elevation, azimuth):
         device = elevation.device
@@ -32,7 +32,6 @@ def compute_view_dependent_scale(elevation, azimuth, view_anchors):
             weights.append(w)
             weights_sum += w
 
-        s0 = 70.0 # hyperparameter to control the overall scale
         W = torch.stack(weights, dim=0)  # shape (4, ...)
 
         top2 = torch.topk(W, k=2, dim=0).values
