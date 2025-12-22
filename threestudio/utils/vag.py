@@ -14,10 +14,10 @@ def angles_to_vector(elevation, azimuth):
     return torch.stack([x, y, z])
 
 def angle_dot(e1, a1, e2, a2):
-    print(f"e1: {e1}, a1: {a1}, e2: {e2}, a2: {a2}")
+    # print(f"e1: {e1}, a1: {a1}, e2: {e2}, a2: {a2}")
     v1 = angles_to_vector(e1, a1)
     v2 = angles_to_vector(e2, a2)
-    print(f"the shape of v: {v1.shape}, v2: {v2.shape}")
+    # print(f"the shape of v: {v1.shape}, v2: {v2.shape}")
     return torch.dot(v1, v2)
 
 def compute_view_dependent_scale(elevation, azimuth, view_anchors, s0=70.0):
@@ -27,7 +27,7 @@ def compute_view_dependent_scale(elevation, azimuth, view_anchors, s0=70.0):
         weights = []
         weights_sum = 0
         for view_anchor in view_anchors:
-            print("view_anchor", view_anchor)
+            # print("view_anchor", view_anchor)
             w = 1 / (1 - angle_dot(e, a, torch.tensor(view_anchor[0], device=device), torch.tensor(view_anchor[1], device=device))) 
             weights.append(w)
             weights_sum += w
@@ -39,7 +39,7 @@ def compute_view_dependent_scale(elevation, azimuth, view_anchors, s0=70.0):
         second_largest_w = top2[1]
 
         s = s0 * (largest_w - second_largest_w) / (weights_sum)
-        print(f"s: {s}")
+        # print(f"s: {s}")
         s_list.append(s)
         
         

@@ -692,7 +692,6 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
             self.views = list(cfg.views)
 
         self.n_views = len(self.views)
-        assert self.batch_size % self.n_views == 0
 
         # Sampling controls
         self.azimuth_jitter: float = float(getattr(cfg, "azimuth_jitter", 50.0))
@@ -732,41 +731,48 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
         # sample elevation angles
         # device = get_device()
         device = self.directions_unit_focal.device
-        anchor_elev = torch.tensor([float(v.get("elevation", 0.0)) for v in self.views],
-                           dtype=torch.float32, device=device)
-        anchor_azim = torch.tensor([float(v.get("azimuth", 0.0)) for v in self.views],
-                                dtype=torch.float32, device=device)
+
+        real_batch_size = self.batch_size
+
+        device = self.directions_unit_focal.device
+
+        anchor_elev = torch.tensor(
+            [v["elevation"] for v in self.views],
+            device=device
+        )
+        anchor_azim = torch.tensor(
+            [v["azimuth"] for v in self.views],
+            device=device
+        )
+
+        # per-sample 隨機選 anchor
+        idx = torch.randint(0, self.n_views, (self.batch_size,), device=device)
         
-        real_batch_size = self.batch_size // self.n_views
+        elevation_deg = anchor_elev[idx] + (
+            torch.rand(self.batch_size, device=device) * 2 - 1
+        ) * self.elevation_jitter
         
-        # base angles: [real_B, n_views]
-        base_elev = anchor_elev[None, :].expand(real_batch_size, self.n_views)
-        base_azim = anchor_azim[None, :].expand(real_batch_size, self.n_views)
+        azimuth_deg = anchor_azim[idx] + (
+            torch.rand(self.batch_size, device=device) * 2 - 1
+        ) * self.azimuth_jitter
+        
+        azimuth_deg = (azimuth_deg + 180) % 360 - 180
+        
+        elevation = elevation_deg * math.pi / 180
+        azimuth   = azimuth_deg   * math.pi / 180
 
-        # uniform jitter in [-jitter, +jitter], shape [real_B, n_views]
-        elev_jit = (torch.rand(real_batch_size, self.n_views, device=device) * 2.0 - 1.0) * float(self.elevation_jitter)
-        azim_jit = (torch.rand(real_batch_size, self.n_views, device=device) * 2.0 - 1.0) * float(self.azimuth_jitter)
-
-        elevation_deg = (base_elev + elev_jit).reshape(-1)   # -> [B]
-        azimuth_deg   = (base_azim + azim_jit).reshape(-1)   # -> [B]
-
-        # wrap azimuth to [-180, 180)
-        azimuth_deg = (azimuth_deg + 180.0) % 360.0 - 180.0
-
-        elevation = elevation_deg * math.pi / 180.0
-        azimuth   = azimuth_deg   * math.pi / 180.0
 
         fovy_deg: Float[Tensor, "B"] = (
             torch.rand(real_batch_size) * (self.fovy_range[1] - self.fovy_range[0])
             + self.fovy_range[0]
-        ).repeat_interleave(self.n_views, dim=0)
+        )
         fovy = fovy_deg * math.pi / 180
 
         camera_distances: Float[Tensor, "B"] = (
             torch.rand(real_batch_size)
             * (self.camera_distance_range[1] - self.camera_distance_range[0])
             + self.camera_distance_range[0]
-        ).repeat_interleave(self.n_views, dim=0)
+        )
 
         # rendering size
         if self.relative:
@@ -797,18 +803,18 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
         camera_perturb: Float[Tensor, "B 3"] = (
             torch.rand(real_batch_size, 3) * 2 * self.cfg.camera_perturb
             - self.cfg.camera_perturb
-        ).repeat_interleave(self.n_views, dim=0)
+        )
 
         camera_positions = camera_positions + camera_perturb
         # sample center perturbations from a normal distribution with mean 0 and std center_perturb
         center_perturb: Float[Tensor, "B 3"] = (
             torch.randn(real_batch_size, 3) * self.cfg.center_perturb
-        ).repeat_interleave(self.n_views, dim=0)
+        )
         center = center + center_perturb
         # sample up perturbations from a normal distribution with mean 0 and std up_perturb
         up_perturb: Float[Tensor, "B 3"] = (
             torch.randn(real_batch_size, 3) * self.cfg.up_perturb
-        ).repeat_interleave(self.n_views, dim=0)
+        )
         up = up + up_perturb
 
         # sample light distance from a uniform distribution bounded by light_distance_range
@@ -816,13 +822,13 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
             torch.rand(real_batch_size)
             * (self.cfg.light_distance_range[1] - self.cfg.light_distance_range[0])
             + self.cfg.light_distance_range[0]
-        ).repeat_interleave(self.n_views, dim=0)
+        )
 
         if self.cfg.light_sample_strategy == "dreamfusion":
             # sample light direction from a normal distribution with mean camera_position and std light_position_perturb
             light_direction: Float[Tensor, "B 3"] = F.normalize(
                 camera_positions
-                + torch.randn(real_batch_size, 3).repeat_interleave(self.n_views, dim=0)
+                + torch.randn(real_batch_size, 3)
                 * self.cfg.light_position_perturb,
                 dim=-1,
             )
@@ -844,14 +850,10 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
             rot = torch.stack([local_x, local_y, local_z], dim=-1)
             light_azimuth = (
                 torch.rand(real_batch_size) * math.pi - 2 * math.pi
-            ).repeat_interleave(
-                self.n_views, dim=0
-            )  # [-pi, pi]
+            )
             light_elevation = (
                 torch.rand(real_batch_size) * math.pi / 3 + math.pi / 6
-            ).repeat_interleave(
-                self.n_views, dim=0
-            )  # [pi/6, pi/2]
+            )
             light_positions_local = torch.stack(
                 [
                     light_distances
@@ -968,7 +970,110 @@ class SfSViewDependentIterableDataset(RandomCameraIterableDataset):
 
         fovy = fovy_deg * math.pi / 180
         light_positions: Float[Tensor, "B 3"] = camera_positions
+        
+        lookat: Float[Tensor, "B 3"] = F.normalize(center - camera_positions, dim=-1)
+        right: Float[Tensor, "B 3"] = F.normalize(torch.cross(lookat, up), dim=-1)
+        up = F.normalize(torch.cross(right, lookat), dim=-1)
+        c2w3x4: Float[Tensor, "B 3 4"] = torch.cat(
+            [torch.stack([right, up, -lookat], dim=-1), camera_positions[:, :, None]],
+            dim=-1,
+        )
+        c2w: Float[Tensor, "B 4 4"] = torch.cat(
+            [c2w3x4, torch.zeros_like(c2w3x4[:, :1])], dim=1
+        )
+        c2w[:, 3, 3] = 1.0
 
+        # get directions by dividing directions_unit_focal by focal length
+        focal_length: Float[Tensor, "B"] = (
+            0.5 * self.cfg.eval_height / torch.tan(0.5 * fovy)
+        )
+        directions_unit_focal = get_ray_directions(
+            H=self.cfg.eval_height, W=self.cfg.eval_width, focal=1.0
+        )
+        directions: Float[Tensor, "B H W 3"] = directions_unit_focal[
+            None, :, :, :
+        ].repeat(
+            1, 1, 1, 1
+        )  # n_view = 1
+        directions[:, :, :, :2] = (
+            directions[:, :, :, :2] / focal_length[:, None, None, None]
+        )
+
+        rays_o, rays_d = get_rays(directions, c2w, keepdim=True)
+        proj_mtx: Float[Tensor, "B 4 4"] = get_projection_matrix(
+            fovy, self.cfg.eval_width / self.cfg.eval_height, 0.1, 1000.0
+        )  # FIXME: hard-coded near and far
+        mvp_mtx: Float[Tensor, "B 4 4"] = get_mvp_matrix(c2w, proj_mtx)
+
+        identity_c2w: Float[Tensor, "B 3 4"] = torch.eye(4).to(c2w)[None, :3]
+        identity_c2w = repeat(identity_c2w, "1 w h -> b w h", b=c2w.shape[0])
+        _, rays_d_tmp = get_rays(directions, identity_c2w, keepdim=True)
+        depth_scale = torch.abs(rays_d_tmp[..., 2:])
+
+        return {
+            "index": -1,  # -1 means condition camera condition space
+            "rays_o": rays_o,
+            "rays_d": rays_d,
+            "c2w": c2w,
+            "rays_depth_scale": depth_scale,
+            "mvp_mtx": mvp_mtx,
+            "camera_positions": camera_positions,
+            "light_positions": light_positions,
+            "elevation": elevation,
+            "azimuth": azimuth,
+            "camera_distances": camera_distances,
+        }
+
+    def collate(self, batch) -> Dict[str, Any]:
+        orthogonal_cond = self.obtain_orthogonal_view(batch)
+        return orthogonal_cond
+
+    def merge_condition_camera(self, cond_a, cond_b, keys):
+        merge_camera = {}
+        for key in keys:
+            if isinstance(cond_a[key], Tensor):
+                merge_camera[key] = torch.cat(
+                    [cond_a[key][:, None], cond_b[key][:, None]], dim=1
+                )
+            else:
+                merge_camera[key] = cond_a[key]
+        return merge_camera
+
+    def get_condition_cameras(self, elev=15.0, distance=3.0, azimuth=0.0):
+        """for zero123, condition camera position"""
+        azimuth_deg: Float[Tensor, "B"] = (torch.Tensor([azimuth])).float()
+        camera_distances: Float[Tensor, "B"] = (torch.Tensor([distance])).float()
+        elevation_deg: Float[Tensor, "B"] = (torch.Tensor([elev])).float()
+
+        elevation = elevation_deg * math.pi / 180
+        azimuth = azimuth_deg * math.pi / 180
+
+        # convert spherical coordinates to cartesian coordinates
+        # right hand coordinate system, x back, y right, z up
+        # elevation in (-90, 90), azimuth from +x to +y in (-180, 180)
+        camera_positions: Float[Tensor, "B 3"] = torch.stack(
+            [
+                camera_distances * torch.cos(elevation) * torch.cos(azimuth),
+                camera_distances * torch.cos(elevation) * torch.sin(azimuth),
+                camera_distances * torch.sin(elevation),
+            ],
+            dim=-1,
+        )
+
+        # default scene center at origin
+        center: Float[Tensor, "B 3"] = torch.zeros_like(camera_positions)
+        # default camera up direction as +z
+        up: Float[Tensor, "B 3"] = torch.as_tensor([0, 0, 1], dtype=torch.float32)[
+            None, :
+        ].repeat(self.cfg.eval_batch_size, 1)
+
+        fovy_deg: Float[Tensor, "B"] = torch.full_like(
+            elevation_deg, self.cfg.eval_fovy_deg
+        )
+
+        fovy = fovy_deg * math.pi / 180
+        light_positions: Float[Tensor, "B 3"] = camera_positions
+        
         lookat: Float[Tensor, "B 3"] = F.normalize(center - camera_positions, dim=-1)
         right: Float[Tensor, "B 3"] = F.normalize(torch.cross(lookat, up), dim=-1)
         up = F.normalize(torch.cross(right, lookat), dim=-1)

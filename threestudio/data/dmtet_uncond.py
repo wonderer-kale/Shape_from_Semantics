@@ -65,7 +65,7 @@ class RandomCameraDataModuleConfig:
     # for sfs
     views: List[Dict[str, Any]] = field(default_factory=lambda: [] )
     azimuth_jitter: float = 50.0
-    elevation_jitter: float = 25.0
+    elevation_jitter: float = .0
 
 
 class RandomCameraIterableDataset(IterableDataset, Updateable):

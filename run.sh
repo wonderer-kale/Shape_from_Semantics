@@ -14,4 +14,12 @@ python ./run_tetsplatting.py \
     --views '[{"prompt":"an apple","elevation":0,"azimuth":0},
           {"prompt":"Isaac Newton","elevation":0,"azimuth":120},
           {"prompt":"Open Book","elevation":0,"azimuth":-120}]' \
-    -o outputs/sfs70 --gpus 1
+    --config_file sfs-view \
+    -o outputs/sfs70 --gpus 6
+
+python ./run_tetsplatting.py \
+    --views '[{"prompt":"an apple","elevation":0,"azimuth":0},
+          {"prompt":"Isaac Newton","elevation":0,"azimuth":120},
+          {"prompt":"Open Book","elevation":0,"azimuth":-120}]' \
+    --config_file sfs-view \
+    -o outputs/sfs70_batch12 --gpus 6
