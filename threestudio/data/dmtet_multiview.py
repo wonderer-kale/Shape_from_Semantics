@@ -638,7 +638,7 @@ class Dream3DOrthogonalIterableDataset(RandomCameraIterableDataset):
             )
 
         lookat: Float[Tensor, "B 3"] = F.normalize(center - camera_positions, dim=-1)
-        right: Float[Tensor, "B 3"] = F.normalize(torch.cross(lookat, up), dim=-1)
+        right: Float[Tensor, "B 3"] = F.normalize(torch.cross(lookat, up, dim=-1), dim=-1)
         up = F.normalize(torch.cross(right, lookat), dim=-1)
         c2w3x4: Float[Tensor, "B 3 4"] = torch.cat(
             [torch.stack([right, up, -lookat], dim=-1), camera_positions[:, :, None]],
