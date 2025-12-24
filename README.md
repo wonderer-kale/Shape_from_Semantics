@@ -1,33 +1,22 @@
-# Tetrahedron Splatting for 3D Generation
-### [[Project page]](https://fudan-zvg.github.io/tet-splatting) | [[Paper]](https://arxiv.org/abs/2406.01579)
+# Shape from Semantic
 
-> [**Tetrahedron Splatting for 3D Generation**](https://arxiv.org/abs/2406.01579),            
-> [Chun Gu](https://sulvxiangxin.github.io/), Zeyu Yang, Zijie Pan, [Xiatian Zhu](https://surrey-uplab.github.io/), [Li Zhang](https://lzrobots.github.io)  
-> **Arxiv preprint**
+**Unofficial reproduction of "Shape from Semantics: 3D Shape Generation from Multi-View Semantics".** 
 
-**Official implementation of "Tetrahedron Splatting for 3D Generation".** 
-
-
-## 🛠️ Pipeline
-<div align="center">
-  <img src="assets/pipeline.png"/>
-</div><br/>
-
-## ⚙️ Installation
+## Installation
 
 ```bash
-git clone https://github.com/fudan-zvg/tet-splatting.git --recursive
+git clone https://github.com/wonderer-kale/Shape_from_Semantics.git --recursive
 conda create -n tetsplatting python=3.9
-conda activate tetsplatting
+conda activate shape_from_semantic
 
-# install pytorch (e.g. cuda 11.7)
-pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2
+# install pytorch (e.g. cuda 11.8)
+pip install torch==2.1.2+cu118 torchvision==0.16.2+cu118 --index-url https://download.pytorch.org/whl/cu118
 
 # install other denpendencies
-pip install -r requirements.txt
-```
+pip install -r requirements.txt --no-build-isolation
 
-You can also refer to [threestudio](https://github.com/threestudio-project/threestudio#installation) or [RichDreamer](https://github.com/modelscope/RichDreamer#install) for preparing the environment.
+pip install xatlas imageio[ffmpeg] modelscope
+```
 
 Download pretrained weights:
 
@@ -39,15 +28,23 @@ cp ./pretrained_models/Damo_XR_Lab/Normal-Depth-Diffusion-Model/256_tets.npz ./l
 cd pretrained_models && ln -s ~/.cache/huggingface ./
 ```
 
-## 🔄 Generation
+Due to the shutdown of stabilityai/stable-diffusion-2-1-base, we use the alternative model Manojb/stable-diffusion-2-1-base. 
 
 ```bash
-# Run a single prompt
-python3 ./run_tetsplatting.py -t $prompt -o $output --gpus $GPU
+python -m huggingface_hub.snapshot_download \
+    --repo-id Manojb/stable-diffusion-2-1-base \
+    --cache-dir ./pretrained_models/huggingface
+```
 
-# Run from prompt list
-# e.g. bash ./scripts/tetsplatting/run_batch.sh 0 1 ./prompts_dmtet.txt 0
-bash ./scripts/tetsplatting/run_batch.sh $start_id $end_id ${prompts_dmtet.txt} ${GPU}
+## Generation
+
+Specify the condition in the --views string
+
+```bash
+python ./run_tetsplatting.py \
+    --views '[{"prompt":"Pumpkin Carriage","elevation":0,"azimuth":0},
+          {"prompt":"A lion","elevation":0,"azimuth":180}]' \
+    -o outputs/<your output folder> --gpus <GPU ID>
 ```
 
 ## Acknowledgement
@@ -59,13 +56,4 @@ This work is built on many amazing research works:
 - [3DGS](https://github.com/graphdeco-inria/gaussian-splatting)
 - [nvdiffrec](https://github.com/NVlabs/nvdiffrec)
 - [StopThePop](https://github.com/r4dl/StopThePop-Rasterization)
-
-## 📜 BibTeX
-```bibtex
-@inproceedings{gu2024tetrahedron,
-  title={Tetrahedron Splatting for 3D Generation},
-  author={Gu, Chun and Yang, Zeyu and Pan, Zijie and Zhu, Xiatian and Zhang, Li},
-  booktitle={NeurIPS},
-  year={2024}
-}
-```
+- [TeT-Splatting](https://github.com/fudan-zvg/tet-splatting)
