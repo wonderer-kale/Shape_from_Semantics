@@ -61,6 +61,7 @@ class RandomCameraDataModuleConfig:
     multiview_eval: bool = False
     cond_view: List[int] = field(default_factory=lambda: [])
     relative: bool = True  # using at orthogonal dataset
+    views: List[dict] = field(default_factory=lambda: [])
 
 
 class RandomCameraIterableDataset(IterableDataset, Updateable):

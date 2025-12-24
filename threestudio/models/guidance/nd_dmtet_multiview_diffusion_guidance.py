@@ -137,11 +137,24 @@ class MultiviewDiffusionDMTetGuidance(
         input_is_latent=False,
         **kwargs,
     ):
-        relative_scale_distances = 2 * relative_distances
 
         rgb = self.collect_inputs(out)
         batch_size = rgb.shape[0]
+        print("batch_size: ", batch_size)
+        print("self.cfg.n_view: ", self.cfg.n_view)
+
+        print("batch_size == 1 and self.cfg.n_view > 1")
+        n_dup = self.cfg.n_view  # 4
+        rgb = rgb.repeat_interleave(n_dup, dim=0)                    # [1,H,W,C] -> [4,H,W,C]
+        c2w = c2w.repeat_interleave(n_dup, dim=0)                     # [1,4,4] -> [4,4,4]
+        elevation = elevation.repeat_interleave(n_dup, dim=0)                 # [1] -> [4]
+        azimuth = azimuth.repeat_interleave(n_dup, dim=0)                     # [1] -> [4]
+        camera_distances = camera_distances.repeat_interleave(n_dup, dim=0)   # [1] -> [4]
+        relative_distances = relative_distances.repeat_interleave(n_dup, dim=0)  # [1] -> [4]
+        batch_size = n_dup
+
         camera = c2w
+        relative_scale_distances = 2 * relative_distances
 
         rgb_BCHW = rgb.permute(0, 3, 1, 2)
 
@@ -149,6 +162,8 @@ class MultiviewDiffusionDMTetGuidance(
             text_embeddings = prompt_utils.get_text_embeddings(
                 elevation, azimuth, camera_distances, self.cfg.view_dependent_prompting
             )
+        
+        #text_embeddings = text_embeddings.repeat(n_dup, 1)
 
         if input_is_latent:
             latents = rgb
@@ -201,6 +216,9 @@ class MultiviewDiffusionDMTetGuidance(
                     camera, fovy, distances=relative_scale_distances
                 )
                 camera = camera.repeat(2, 1).to(text_embeddings)
+                print("camera: ", camera.shape)
+                print("text_embeddings: ", text_embeddings.shape)
+                print("num_frames: ", self.cfg.n_view)
                 context = {
                     "context": text_embeddings,
                     "camera": camera,
@@ -369,6 +387,16 @@ class MultiviewDiffusionDMTetCatGuidance(MultiviewDiffusionDMTetGuidance):
         rgb = self.collect_inputs(out)
 
         batch_size = rgb.shape[0]
+        print("batch_size == 1 and self.cfg.n_view > 1")
+        n_dup = self.cfg.n_view  # 4
+        rgb = rgb.repeat_interleave(n_dup, dim=0)                    # [1,H,W,C] -> [4,H,W,C]
+        c2w = c2w.repeat_interleave(n_dup, dim=0)                       # [1,4,4] -> [4,4,4]
+        elevation = elevation.repeat_interleave(n_dup, dim=0)                 # [1] -> [4]
+        azimuth = azimuth.repeat_interleave(n_dup, dim=0)                     # [1] -> [4]
+        camera_distances = camera_distances.repeat_interleave(n_dup, dim=0)   # [1] -> [4]
+        relative_distances = relative_distances.repeat_interleave(n_dup, dim=0)  # [1] -> [4]
+        relative_scale_distances = relative_scale_distances.repeat_interleave(n_dup, dim=0)  # [1] -> [4]
+        batch_size = n_dup
         camera = c2w
 
         rgb_BCHW = rgb.permute(0, 3, 1, 2)
@@ -382,6 +410,7 @@ class MultiviewDiffusionDMTetCatGuidance(MultiviewDiffusionDMTetGuidance):
             text_embeddings = prompt_utils.get_text_embeddings(
                 elevation, azimuth, camera_distances, self.cfg.view_dependent_prompting
             )
+        #text_embeddings = text_embeddings.repeat(n_dup, 1)
 
         if input_is_latent:
             latents = rgb
