@@ -395,6 +395,7 @@ class MultiviewDiffusionDMTetCatGuidance(MultiviewDiffusionDMTetGuidance):
         azimuth = azimuth.repeat_interleave(n_dup, dim=0)                     # [1] -> [4]
         camera_distances = camera_distances.repeat_interleave(n_dup, dim=0)   # [1] -> [4]
         relative_distances = relative_distances.repeat_interleave(n_dup, dim=0)  # [1] -> [4]
+        relative_scale_distances = relative_scale_distances.repeat_interleave(n_dup, dim=0)  # [1] -> [4]
         batch_size = n_dup
         camera = c2w
 
