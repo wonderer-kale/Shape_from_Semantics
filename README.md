@@ -33,7 +33,7 @@ Due to the shutdown of stabilityai/stable-diffusion-2-1-base, we use the alterna
 ```bash
 python -m huggingface_hub.snapshot_download \
     --repo-id Manojb/stable-diffusion-2-1-base \
-    --cache-dir ./pretrained_models/huggingface
+    --cache-dir ./pretrained_models/huggingface/hub
 ```
 
 ## Generation
