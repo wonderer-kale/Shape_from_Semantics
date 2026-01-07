@@ -140,10 +140,6 @@ class MultiviewDiffusionDMTetGuidance(
 
         rgb = self.collect_inputs(out)
         batch_size = rgb.shape[0]
-        print("batch_size: ", batch_size)
-        print("self.cfg.n_view: ", self.cfg.n_view)
-
-        print("batch_size == 1 and self.cfg.n_view > 1")
         n_dup = self.cfg.n_view  # 4
         rgb = rgb.repeat_interleave(n_dup, dim=0)                    # [1,H,W,C] -> [4,H,W,C]
         c2w = c2w.repeat_interleave(n_dup, dim=0)                     # [1,4,4] -> [4,4,4]
@@ -216,9 +212,6 @@ class MultiviewDiffusionDMTetGuidance(
                     camera, fovy, distances=relative_scale_distances
                 )
                 camera = camera.repeat(2, 1).to(text_embeddings)
-                print("camera: ", camera.shape)
-                print("text_embeddings: ", text_embeddings.shape)
-                print("num_frames: ", self.cfg.n_view)
                 context = {
                     "context": text_embeddings,
                     "camera": camera,
@@ -238,9 +231,6 @@ class MultiviewDiffusionDMTetGuidance(
         # noise_pred = self.cfg.guidance_scale * noise_pred_text + (1 - self.cfg.guidance_scale) * noise_pred_uncond
         view_anchors = prompt_utils.view_anchors
         vag_scale    = compute_view_dependent_scale(elevation, azimuth, view_anchors).view(-1, 1, 1, 1)
-        # print("vag_scale dim = ", vag_scale.shape)
-        # print("self.cfg.guidance_scale dim = ", self.cfg.guidance_scale)
-        # print("noise_pred_text dim = ", noise_pred_text.shape)
         noise_pred = vag_scale * noise_pred_text + (1 - vag_scale) * noise_pred_uncond
 
         if self.cfg.recon_loss:
@@ -387,7 +377,6 @@ class MultiviewDiffusionDMTetCatGuidance(MultiviewDiffusionDMTetGuidance):
         rgb = self.collect_inputs(out)
 
         batch_size = rgb.shape[0]
-        print("batch_size == 1 and self.cfg.n_view > 1")
         n_dup = self.cfg.n_view  # 4
         rgb = rgb.repeat_interleave(n_dup, dim=0)                    # [1,H,W,C] -> [4,H,W,C]
         c2w = c2w.repeat_interleave(n_dup, dim=0)                       # [1,4,4] -> [4,4,4]
